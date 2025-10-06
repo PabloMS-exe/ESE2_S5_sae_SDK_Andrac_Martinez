@@ -1,11 +1,18 @@
 import pyvisa
 import time
 
+class Instrument : 
+        def __init__(self, adresse, port,nom, reglage,etat ):
+             self.adresse = adresse
+             self.port = port
+             self.nom = nom
+             self.reglage = reglage
+             self.etat = etat
 
-
-class ARV:
-    def __init__(self, ip, port=5025):
-        self.ip = ip
+class ARV (Instrument):
+    def __init__(self, adresse, port, nom, reglage=None, etat=None ):
+        super().__init__(adresse, port, nom, reglage, etat)
+        self.adresse = adresse
         self.port = port
         self.rm = pyvisa.ResourceManager()
         self.device = None
@@ -13,9 +20,9 @@ class ARV:
     def connect(self):
         try:
             # Format de l'adresse : TCPIP0::ip_address::5025::SOCKET
-            resource_string = f"TCPIP0::{self.ip}::{self.port}::SOCKET"
+            resource_string = f"TCPIP0::{self.adresse}::{self.port}::SOCKET"
             self.device = self.rm.open_resource(resource_string)
-            print(f"Connecté à l'ARV {self.ip} sur le port {self.port}")
+            print(f"Connecté à l'ARV {self.adresse} sur le port {self.port}")
             self.device.write("*IDN?")  # Identification de l'instrument
             print(self.device.read())  # Affiche l'ID de l'ARV
         except Exception as e:
@@ -89,7 +96,7 @@ class ARV:
             print("Connexion fermée.")
 
 
-S2VNA = ARV("127.0.0.1")  
+S2VNA = ARV("127.0.0.1",5025, "ARV")  
 S2VNA.connect()
 S2VNA.preset()
 S2VNA.set_frequence(175000000, 150000000)

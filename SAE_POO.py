@@ -13,7 +13,7 @@ class Mesure :
         pass
     def getResult(self, ):
         pass
-    def setInstrumrnt(self, ):
+    def setInstrument(self, ):
         pass
 
 class Instrument : 
@@ -30,10 +30,6 @@ class Raport :
          pass
     def includeResultat(self, ):
          pass
-
-
-
-
 
 resourceManager = pyvisa.ResourceManager()
 list = resourceManager.list_resources()

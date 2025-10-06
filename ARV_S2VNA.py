@@ -1,6 +1,8 @@
 import pyvisa
 import time
 
+
+
 class ARV:
     def __init__(self, ip, port=5025):
         self.ip = ip

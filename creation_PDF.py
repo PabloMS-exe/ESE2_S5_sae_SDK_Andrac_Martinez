@@ -61,7 +61,7 @@ class CertificatApp:
         pdf.set_font("Arial", 'B', 16)
         pdf.cell(200, 10, "Certificat de Bon Fonctionnement", ln=True, align='C')
 
-        pdf.ln(10)  # Espacement
+        pdf.ln(10)  
         pdf.set_font("Arial", size=12)
         pdf.cell(200, 10, f"Date du test : {datetime.now().strftime('%d-%m-%Y')}", ln=True)
         pdf.cell(200, 10, f"Nom du technicien : {technicien}", ln=True)

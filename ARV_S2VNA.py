@@ -1,16 +1,16 @@
 import pyvisa
 import time
 
-class Instrument : 
-        def __init__(self, adresse, port,nom, reglage,etat ):
-             self.adresse = adresse
-             self.port = port
-             self.nom = nom
-             self.reglage = reglage
-             self.etat = etat
+class Instrument:
+    def __init__(self, adresse, port, nom, reglage, etat):
+        self.adresse = adresse
+        self.port = port
+        self.nom = nom
+        self.reglage = reglage
+        self.etat = etat
 
-class ARV (Instrument):
-    def __init__(self, adresse, port, nom, reglage=None, etat=None ):
+class ARV(Instrument):
+    def __init__(self, adresse, port, nom, reglage=None, etat=None):
         super().__init__(adresse, port, nom, reglage, etat)
         self.adresse = adresse
         self.port = port
@@ -87,7 +87,13 @@ class ARV (Instrument):
     def set_frequence(self, freq, span):
         self.device.write(f"SENSE:FREQUENCY:CENTER {freq}")
         self.device.write(f"SENSE:FREQUENCY:SPAN {span}")
- 
+    
+    def set_parametre_S(self, param_S):
+        """
+        Définir un paramètre S souhaité (S11, S12, S21, S22)"""
+        self.param_s = param_S
+        self.device.write(f"CALC:PAR:SEL {self.param_s}")
+
 
     def close(self):
         """ Ferme la connexion avec l'ARV """
@@ -96,12 +102,14 @@ class ARV (Instrument):
             print("Connexion fermée.")
 
 
-S2VNA = ARV("127.0.0.1",5025, "ARV")  
+# Exemple d'utilisation
+S2VNA = ARV("127.0.0.1", 5025, "ARV")  
 S2VNA.connect()
 S2VNA.preset()
 S2VNA.set_frequence(175000000, 150000000)
 S2VNA.set_calibrage("Open")
 
 
-
+S2VNA.set_parametre_S("S22")
+S2VNA.close() 
 

@@ -89,7 +89,7 @@ class CertificatApp:
         
         messagebox.showinfo("Succès", "Le certificat a été généré et sauvegardé avec succès !")
 
-# Créer l'application Tkinter
+
 root = tk.Tk()
 app = CertificatApp(root)
 root.mainloop()

@@ -1,6 +1,7 @@
 import pyvisa
-import fpdf 
 import reportlab
+import fpdf 
+
 
 class Resultat : 
     def __init__(self):

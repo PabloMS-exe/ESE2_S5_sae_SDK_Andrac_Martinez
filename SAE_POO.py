@@ -3,17 +3,17 @@ import fpdf
 import reportlab
 
 class Resultat : 
-    def __init__(self, ):
+    def __init__(self):
         pass
-    def setReport(self, ):
+    def setReport(self):
         pass
 
 class Mesure : 
-    def __init__(self, ):
+    def __init__(self):
         pass
-    def getResult(self, ):
+    def getResult(self):
         pass
-    def setInstrument(self, ):
+    def setInstrument(self):
         pass
 
 class Instrument : 
@@ -26,9 +26,9 @@ class Instrument :
 
 
 class Raport : 
-    def __init__(self, ):
+    def __init__(self):
          pass
-    def includeResultat(self, ):
+    def includeResultat(self):
          pass
 
 resourceManager = pyvisa.ResourceManager()

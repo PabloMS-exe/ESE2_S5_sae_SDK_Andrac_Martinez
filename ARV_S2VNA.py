@@ -42,8 +42,8 @@ class ARV(Instrument):
     def set_calibrage(self, method="full", port=1, delay=5):
         """
         Calibration automatique sans interface :
-        - method: 'open', 'short', 'thru', 'full'
-        - port: port concerné par la calibration (1 ou 2)
+        - méthode possible : 'open', 'short', 'thru', 'full'
+        - les ports dispo: port concerné par la calibration (1 ou 2)
         - delay: temps en secondes entre chaque étape
         """
         if self.device is None:

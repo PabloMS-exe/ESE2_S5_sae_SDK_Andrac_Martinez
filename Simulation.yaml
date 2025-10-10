@@ -1,6 +1,8 @@
 spec: "1.1"
 devices:
-  HP33120A:
+  # J'ai rajouté des options tel que : Choix de la parametre S, le choix de la puissance, CW_fréquence, Sweep_type et  
+  # J'ai sup le 2e device car on a pas encore fait fonctionné le premiers
+  ARV2TEST:
     eom:
       ASRL INSTR:
         q: "\r\n"
@@ -13,168 +15,126 @@ devices:
         command_error: 32
         query_error: 4
     dialogues:
-      - q: "?IDN"
+      - q: "*IDN?"
         r: "LSG Serial #1234"
       - q: "!CAL"
-        r: OK
+        r: "OK"
       - q: "*RST"
     properties:
       frequency:
         default: 100.0
         getter:
-          q: "?FREQ"
-          r: "{RANDOM(0, 10000000, 1):.2f}"
+          q: "SENS:FREQ?"
+          r: "{RANDOM(0, 3200000000, 1):.2f}"
         setter:
-          q: "!FREQ {:.2f}"
-          r: OK
+          q: "SENS:FREQ {:.2f}"
+          r: "OK"
           e: 'FREQ_ERROR'
         specs:
           min: 1
-          max: 100000
+          max: 3200000000
           type: float
-      amplitude:
-        default: 1.0
+      sparameter:
+        default: "S11"
         getter:
-          q: "?AMP"
-          r: "{:.2f}"
+          q: "CALC:PAR:DEF?"
+          r: "{sparameter}"
         setter:
-          q: "!AMP {:.2f}"
-          r: OK
+          q: "CALC:PAR:DEF {param}"
+          r: "OK"
         specs:
-          min: 0
-          max: 10
-          type: float
-      offset:
-        default: 0
-        getter:
-          q: "?OFF"
-          r: "{:.2f}"
-        setter:
-          q: "!OFF {:.2f}"
-          r: OK
-        specs:
-          min: 0
-          max: 10
-          type: float
-      output_enabled:
-        default: 0
-        getter:
-          q: "?OUT"
-          r: "{:d}"
-        setter:
-          q: "!OUT {:d}"
-          r: OK
-        specs:
-          valid: [0, 1]
-          type: int
-      waveform:
-        default: 0
-        getter:
-          q: "?WVF"
-          r: "{:d}"
-        setter:
-          q: "!WVF {:d}"
-          r: OK
-        specs:
-          valid: [0, 1, 2, 3]
-          type: int
-  SR830:
-    eom:
-      ASRL INSTR:
-        q: "\r\n"
-        r: "\n"
-    error: 
-      response:
-        command_error: null_response
-      status_register:
-      - q: "*ESR?"
-        command_error: 32
-        query_error: 4
-    dialogues:
-      - q: "?IDN"
-        r: "LSG Serial #1234"
-      - q: "!CAL"
-        r: OK
-      - q: "*RST"
-    properties:
-      frequency:
+          valid: ["S11", "S21", "S12", "S22"]
+          type: str
+      CW_freq:
         default: 100.0
         getter:
-          q: "?FREQ"
-          r: "{RANDOM(0, 10000000, 1):.2f}"
+          q: "SENS:FREQ:CW?"
+          r: "{RANDOM(0, 3200000000, 1):.2f}"
         setter:
-          q: "!FREQ {:.2f}"
-          r: OK
+          q: "SENS:FREQ:CW {:.2f}"
+          r: "OK"
           e: 'FREQ_ERROR'
         specs:
           min: 1
-          max: 100000
+          max: 3200000000
           type: float
-      amplitude:
-        default: 1.0
+      power:
+        default: -10
         getter:
-          q: "?AMP"
-          r: "{:.2f}"
+          q: "STIM:POW?"
+          r: "{power:.1f}"
         setter:
-          q: "!AMP {:.2f}"
-          r: OK
+          q: "STIM:POW {value}"
+          r: "OK"
         specs:
-          min: 0
-          max: 10
+          min: -100
+          max: 0
           type: float
+      sweep_type:
+        default: "linear"
+        getter:
+          q: "STIM:SWE:TYPE?"
+          r: "{sweep_type}"
+        setter:
+          q: "STIM:SWE:TYPE {stype}"
+          r: "OK"
+        specs:
+          valid: ["linear", "log", "sweep"]
+          type: str
       offset:
         default: 0
         getter:
-          q: "?OFF"
+          q: "OFF?"
           r: "{:.2f}"
         setter:
-          q: "!OFF {:.2f}"
-          r: OK
+          q: "OFF {:.2f}"
+          r: "OK"
         specs:
           min: 0
           max: 10
           type: float
-      output_enabled:
-        default: 0
-        getter:
-          q: "?OUT"
-          r: "{:d}"
-        setter:
-          q: "!OUT {:d}"
-          r: OK
-        specs:
-          valid: [0, 1]
-          type: int
       waveform:
         default: 0
         getter:
-          q: "?WVF"
+          q: "WVF"
           r: "{:d}"
         setter:
-          q: "!WVF {:d}"
-          r: OK
+          q: "WVF {:d}"
+          r: "OK"
         specs:
           valid: [0, 1, 2, 3]
           type: int
+      measure_curve:
+        default: null
+        setter:
+          q: "SENS:FREQ:START {start}; SENS:FREQ:STOP {stop}; SENS:SWE:POIN {points}; CALC:PAR:DEF {sparam}"
+          r: "OK"
+        getter:
+          q: "CALC:DATA? SDATA"
+          r: "{GEN_CURVE({start}, {stop}, {points})}"
+        specs:
+          type: list
+          description: "Configure et renvoie une courbe simulée pour le paramètre S sélectionné"
+
   
 resources:
   ASRL1::INSTR:
-    device: device 1
+    device: ARV2TEST
   USB::0x1111::0x2222::0x1234::INSTR:
-    device: device 1
+    device: ARV2TEST
   TCPIP::localhost::INSTR:
-    device: device 1
+    device: ARV2TEST
   TCPIP::localhost::10001::SOCKET:
-    device: device 1
+    device: ARV2TEST
   GPIB::8::INSTR:
-    device: device 1
+    device: ARV2TEST
   ASRL2::INSTR:
-    device: device 2
+    device: ARV2TEST
   USB::0x1111::0x2222::0x2468::INSTR:
-    device: device 2
+    device: ARV2TEST
   TCPIP::localhost:2222::INSTR:
-    device: device 2
+    device: ARV2TEST
   GPIB::9::INSTR:
-    device: device 2
+    device: ARV2TEST
   USB::0x1111::0x2222::0x4445::RAW:
-    device: device 1
+    device: ARV2TEST

@@ -10,15 +10,15 @@ class Resultat :
         pass
 
 class Mesure : 
-    def __init__(self):
-        pass
+    def __init__(self, instrument):
+        self.instrument = instrument
     def getResult(self):
         pass
     def setInstrument(self):
         pass
 
 class Instrument : 
-        def __init__(self, adresse, port,nom, reglage,etat ):
+        def __init__(self, adresse, port,nom, reglage, etat ):
              self.adresse = adresse
              self.port = port
              self.nom = nom
@@ -26,7 +26,7 @@ class Instrument :
              self.etat = etat
 
 
-class Raport : 
+class Rapport : 
     def __init__(self):
          pass
     def includeResultat(self):

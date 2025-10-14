@@ -1,3 +1,8 @@
+
+
+#NE SERT PLUS
+
+
 import pyvisa
 import time
 

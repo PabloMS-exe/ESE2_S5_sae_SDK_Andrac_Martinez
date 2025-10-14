@@ -1,10 +1,11 @@
 import pyvisa
 import time
+import os
 import csv
 import numpy as np
-from SAE_POO import Instrument, Mesure
+from SAE_POO import Instrument, Mesure, Resultat
 from tracer_courbes import TracerCourbes, Gabarit, PDFExporter
-# from mesure import S11Measure, FCS21MaxMeasure, DeltaBPMeasure, DeltaBRMeasure
+from Resultat import ResultatARV
 
 class ARV_S2VNA(Instrument):
     def __init__(self, adresse, port, nom, reglage=None, etat=None):
@@ -114,22 +115,6 @@ class ARV_S2VNA(Instrument):
         self.device.write("DISP:WIND:TRAC1:FEED {param_S}")
 
         print(f"Paramètre {param_S} défini via CALC:CONV:FUNC S.")  
-
-    def verifier_conformite(self, liste_gabarit):
-        """
-        Vérifie si la courbe mesurée respecte tous les gabarits.
-        Retourne True si conforme, False sinon.
-        """
-        data = self.charger_donnees_csv()  # suppose que tu as une méthode pour charger tes données
-        freqs = data["Frequence"]  # ou la colonne correspondante
-        gains = data["Gain"]       # ou la colonne correspondante
-
-        for g in liste_gabarit:
-            for f, g_mes in zip(freqs, gains):
-                if g.freq_min <= f <= g.freq_max:
-                    if not (g.att_min <= g_mes <= g.att_max):
-                        return False
-        return True
   
     def close(self):
         """ Ferme la connexion avec l'ARV """
@@ -139,8 +124,8 @@ class ARV_S2VNA(Instrument):
 
 class Mesure_ARV(Mesure):
     def __init__(self,instrument: ARV_S2VNA):
-        self.instrument=instrument
-
+        super().__init__(instrument)
+        
     def marker_y(self):
         raw = self.instrument.device.query("CALC:MARK1:Y?")
         return float(str(raw).split(",")[0])
@@ -156,57 +141,56 @@ class Mesure_ARV(Mesure):
         self.instrument.set_parametre_S(self.paramS)
 
 
-    def get_trace_data(self, filename="mesures.csv"):
-        # code pour demander à l’instrument de sauvegarder la trace CSV
-        if self.instrument.device is None:
-            print("Pas de connexion active.")
-            return None
+    def get_trace_data(self, dossier="E:/BUT_GE2I/SDK_SAE", base_nom = "", extension=".csv"):
+        """
+        Sauvegarde la trace de mesure avec un nom personnalisé et horodaté.
+        Exemple : E:/BUT_GE2I/SDK_SAE/mesure_S21_20251014_153045.csv
+        """
         try:
-            self.instrument.device.write(f"MMEM:STOR:FDAT '{filename}'")
-            print(f"Fichier {filename} sauvegardé sur l'instrument.")
-            return filename
+            # Génération du nom de fichier avec date et heure
+            nom_fichier = f"{base_nom}{extension}"
+            chemin_complet = os.path.join(dossier, nom_fichier)
+
+            # Envoi de la commande à l'instrument
+            self.instrument.device.write(f"MMEM:STOR:FDAT '{chemin_complet}'")
+            print(f"Fichier sauvegardé : {chemin_complet}")
+            return chemin_complet
         except Exception as e:
             print(f"Erreur lors de la sauvegarde des mesures : {e}")
             return None
-        
+
 
 # Programme Principal 
-S2VNA = ARV_S2VNA("127.0.0.1", 32000, "ARV")  # Création de l'instrument S2VNA
+S2VNA = ARV_S2VNA("127.0.0.1", 5025, "ARV")  # Création de l'instrument S2VNA
 S2VNA.connect()
 mesure_S2VNA = Mesure_ARV(S2VNA)
 
 # 2. Demande à l'instrument de sauvegarder la trace dans un fichier CSV
-nom_fichier_instrument = "mesures.csv"
-fichier_sur_instrument = mesure_S2VNA.get_trace_data(nom_fichier_instrument)
+chemin_local = "E:/BUT_GE2I/SDK_SAE/mesures/"
+nom_fichier = "mes"
+fichier_sur_instrument = mesure_S2VNA.get_trace_data(chemin_local, base_nom = nom_fichier)
 
 if fichier_sur_instrument is None:
     print("Erreur lors de la sauvegarde des mesures sur l'instrument.")
     exit(1)
 
-print(f"Le fichier {fichier_sur_instrument} a été sauvegardé")
-
-# 3. *** Récupérer manuellement ce fichier sur ta machine ***
-#    Exemple : par FTP, USB, ou autre méthode selon ton instrument.
-
-# 4. Charger localement ce fichier CSV sur ton PC (chemin local)
-chemin_fichier_local = "E:/BUT_GE2I/SDK_SAE/"  # <-- à modifier selon où tu copies le fichier
-
-# 3. Créer les gabarits
-gabarit1 = Gabarit(freq_min=0.0, freq_max=2.2e9, att_min=1.0, att_max=2.0)
-gabarit2 = Gabarit(freq_min=2.2e9, freq_max=6.0e9, att_min=-0.8, att_max=0.5)
-gabarit3 = Gabarit(freq_min=6.0e9, freq_max=8.0e9, att_min=1.2, att_max=2.2)
+# # 3. Créer les gabarits
+gabarit1 = Gabarit(freq_min=0.0, freq_max=2.2e9, att_min=-100.0, att_max=-60.0)
+gabarit2 = Gabarit(freq_min=2.2e9, freq_max=6.0e9, att_min=-6, att_max=1)
+gabarit3 = Gabarit(freq_min=6.0e9, freq_max=8.0e9, att_min=-100.0, att_max=-60.0)
 liste_gabarit = [gabarit1, gabarit2, gabarit3]
 
-# 4. Tracer la courbe
-tracer = TracerCourbes(fichier_csv=chemin_fichier_local, titre="Gain S21 mesuré")
+# # 4. Tracer la courbe
+chemin_local_fichier = f"E:/BUT_GE2I/SDK_SAE/mesures/{nom_fichier}.csv"
+tracer = TracerCourbes(fichier_csv=chemin_local_fichier, titre="Gain S21 mesuré")
 tracer.ajouter_gabarit(liste_gabarit)
 tracer.tracer()  # Ne pas oublier de lancer le tracé
 
-# 5. Créer le PDF
+# # 5. Créer le PDF
 pdf = PDFExporter()
+pdf.ajouter_page()
+pdf.multi_cell(0, 10, "Rapport de Mesures Hyperfréquences :\n------------------------", align='C')
 pdf.ajouter_texte(
-    "Rapport de Mesures Hyperfréquences\n"
-    "----------------------------------\n"
     f"Gabarits appliqués :\n"
     f"- [{gabarit1.freq_min/1e9:.1f} GHz – {gabarit1.freq_max/1e9:.1f} GHz] : {gabarit1.att_min} à {gabarit1.att_max} dB\n"
     f"- [{gabarit2.freq_min/1e9:.1f} GHz – {gabarit2.freq_max/1e9:.1f} GHz] : {gabarit2.att_min} à {gabarit2.att_max} dB\n"
@@ -214,7 +198,7 @@ pdf.ajouter_texte(
 )
 pdf.ajouter_courbe(tracer, "Courbe S21 avec Gabarit")
 
-# 6. Vérification de la conformité du test
+# # 6. Vérification de la conformité du test
 conforme = tracer.verifier_conformite(liste_gabarit) if hasattr(tracer, "verifier_conformite") else None
 
 if conforme is not None:
@@ -226,18 +210,25 @@ else:
     pdf.ajouter_texte("\n Impossible de déterminer la conformité (méthode `verifier_conformite` manquante dans `TracerCourbes`).\n")
 
 
-# 7. Ajouter les résultats au PDF
-pdf.ajouter_texte("\nRésultats des Mesures :\n------------------------")
+# # 7. Ajouter les résultats au PDF
+pdf.ajouter_page()
+pdf.multi_cell(0, 10, "Résultats des Mesures :\n------------------------", align='C')  #Crée un texte centré
+resultat = ResultatARV('TCPIP0::127.0.0.1::inst0::INSTR', 1000e6)  #1Ghz
+band_pass, center_freq, insertion_loss, freq = mesurer()
+pdf.ajouter_texte( f"- La fréquence choisie est :{freq} GHz\n")
+pdf.ajouter_texte( f"- La fréquence centrale est :{center_freq} GHz\n")
+pdf.ajouter_texte( f"- La bande passante est :{band_pass} GHz\n")
+pdf.ajouter_texte( f"- La perte d'insertion est :{insertion_loss} GHz\n")
 
-# 8. Générer le PDF final
-pdf.generer("rapport_hyperfrequences.pdf")
+
+# # 8. Générer le PDF final
+pdf.generer("E:/BUT_GE2I/SDK_SAE/test_rapports/rapports_SAE.pdf")
 
 
 
-
-# S2VNA.preset()
-# S2VNA.set_frequence(175000000, 150000000)
-# S2VNA.set_calibrage("ShOrT")
-# S2VNA.set_parametre_S("S21")
-#S2VNA.close() 
+# # S2VNA.preset()
+# # S2VNA.set_frequence(175000000, 150000000)
+# # S2VNA.set_calibrage("ShOrT")
+# # S2VNA.set_parametre_S("S21")
+# #S2VNA.close() 
 

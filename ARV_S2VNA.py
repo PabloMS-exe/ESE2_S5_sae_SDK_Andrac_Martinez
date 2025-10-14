@@ -113,8 +113,24 @@ class ARV_S2VNA(Instrument):
         # 4. L'affiche dans la trace 1
         self.device.write("DISP:WIND:TRAC1:FEED {param_S}")
 
-        print(f"Paramètre {param_S} défini via CALC:CONV:FUNC S.")    
+        print(f"Paramètre {param_S} défini via CALC:CONV:FUNC S.")  
 
+    def verifier_conformite(self, liste_gabarit):
+        """
+        Vérifie si la courbe mesurée respecte tous les gabarits.
+        Retourne True si conforme, False sinon.
+        """
+        data = self.charger_donnees_csv()  # suppose que tu as une méthode pour charger tes données
+        freqs = data["Frequence"]  # ou la colonne correspondante
+        gains = data["Gain"]       # ou la colonne correspondante
+
+        for g in liste_gabarit:
+            for f, g_mes in zip(freqs, gains):
+                if g.freq_min <= f <= g.freq_max:
+                    if not (g.att_min <= g_mes <= g.att_max):
+                        return False
+        return True
+  
     def close(self):
         """ Ferme la connexion avec l'ARV """
         if self.device is not None:
@@ -125,10 +141,6 @@ class Mesure_ARV(Mesure):
     def __init__(self,instrument: ARV_S2VNA):
         self.instrument=instrument
 
-    def marker_y(self):
-        raw = self.instrument.device.query("CALC:MARK1:Y?")
-        return float(str(raw).split(",")[0])
-    
     def marker_y(self):
         raw = self.instrument.device.query("CALC:MARK1:Y?")
         return float(str(raw).split(",")[0])
@@ -144,7 +156,7 @@ class Mesure_ARV(Mesure):
         self.instrument.set_parametre_S(self.paramS)
 
 
-def get_trace_data(self, filename="mesures.csv"):
+    def get_trace_data(self, filename="mesures.csv"):
         # code pour demander à l’instrument de sauvegarder la trace CSV
         if self.instrument.device is None:
             print("Pas de connexion active.")
@@ -201,6 +213,18 @@ pdf.ajouter_texte(
     f"- [{gabarit3.freq_min/1e9:.1f} GHz – {gabarit3.freq_max/1e9:.1f} GHz] : {gabarit3.att_min} à {gabarit3.att_max} dB\n"
 )
 pdf.ajouter_courbe(tracer, "Courbe S21 avec Gabarit")
+
+# 6. Vérification de la conformité du test
+conforme = tracer.verifier_conformite(liste_gabarit) if hasattr(tracer, "verifier_conformite") else None
+
+if conforme is not None:
+    if conforme:
+        pdf.ajouter_texte("\n Le dispositif est **CONFORME** aux spécifications du gabarit.\n")
+    else:
+        pdf.ajouter_texte("\n Le dispositif est **NON CONFORME** aux spécifications du gabarit.\n")
+else:
+    pdf.ajouter_texte("\n Impossible de déterminer la conformité (méthode `verifier_conformite` manquante dans `TracerCourbes`).\n")
+
 
 # 7. Ajouter les résultats au PDF
 pdf.ajouter_texte("\nRésultats des Mesures :\n------------------------")

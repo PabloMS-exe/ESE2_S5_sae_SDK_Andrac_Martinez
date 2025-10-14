@@ -18,8 +18,6 @@ class InstrumentBase:
     def measure(self):
         raise NotImplementedError
 
-
-
 class SimulatedInstrument(InstrumentBase):
     def __init__(self, yaml_path, resource_name):
         super().__init__(resource_name)

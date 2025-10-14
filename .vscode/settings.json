@@ -1,0 +1,6 @@
+{
+    "terminal.integrated.commandsToSkipShell": [
+        "pip",
+        "pip install"
+    ]
+}

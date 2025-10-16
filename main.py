@@ -9,7 +9,7 @@ S2VNA.connect()
 mesure_S2VNA = Mesure_ARV(S2VNA)
 
 # 2. Demande à l'instrument de sauvegarder la trace dans un fichier CSV
-chemin_local = "F:/BUT_GE2I/SDK_SAE/mesures/"
+chemin_local = "E:/BUT_GE2I/SDK_SAE/mesures/"
 nom_fichier = "mes"
 fichier_sur_instrument = mesure_S2VNA.get_trace_data(chemin_local, base_nom = nom_fichier)
 
@@ -24,7 +24,7 @@ gabarit3 = Gabarit(freq_min=6.0e9, freq_max=8.0e9, att_min=-100.0, att_max=-60.0
 liste_gabarit = [gabarit1, gabarit2, gabarit3]
 
 # # 4. Tracer la courbe
-chemin_local_fichier = f"F:/BUT_GE2I/SDK_SAE/mesures/{nom_fichier}.csv"
+chemin_local_fichier = f"E:/BUT_GE2I/SDK_SAE/mesures/{nom_fichier}.csv"
 tracer = TracerCourbes(fichier_csv=chemin_local_fichier, titre="Gain S21 mesuré")
 tracer.ajouter_gabarit(liste_gabarit)
 tracer.tracer()  # Ne pas oublier de lancer le tracé
@@ -72,6 +72,6 @@ pdf.ajouter_texte( f"- La perte d'insertion est :{pi} dB\n")
 
 
 # # 8. Générer le PDF final
-pdf.generer("F:/BUT_GE2I/SDK_SAE/test_rapports/rapports_SAE.pdf")
+pdf.generer("E:/BUT_GE2I/SDK_SAE/test_rapports/rapports_SAE.pdf")
 
 

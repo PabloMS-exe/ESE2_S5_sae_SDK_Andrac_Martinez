@@ -31,9 +31,8 @@ class ARV_S2VNA(Instrument):
             self.device.close()
             print("Connexion fermée.")
 
-    # -------------------------------------------------------------------------
-    # --- Wrappers PyVISA (pour compatibilité avec les classes de mesure)
-    # -------------------------------------------------------------------------
+    # Wrappers PyVISA (pour compatibilité avec les classes de mesure)
+
     def write(self, cmd: str):
         """Envoie une commande SCPI à l’instrument."""
         if self.device is not None:
@@ -55,9 +54,8 @@ class ARV_S2VNA(Instrument):
         else:
             raise ConnectionError("Instrument non connecté")
 
-    # -------------------------------------------------------------------------
-    # --- Commandes instrument spécifiques
-    # -------------------------------------------------------------------------
+    # Commandes instrument spécifiques
+
     def preset(self):
         if self.device is None:
             print("Aucune connexion active à l'ARV.")

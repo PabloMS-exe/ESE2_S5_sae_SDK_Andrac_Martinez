@@ -149,12 +149,6 @@ class TracerCourbes:
                         return False
         return True
 
-        for g in liste_gabarit:
-            for f, g_mes in zip(freqs, gains):
-                if g.freq_min <= f <= g.freq_max:
-                    if not (g.att_min <= g_mes <= g.att_max):
-                        return False
-        return True
 
     def sauvegarder(self, chemin=None):
         """Sauvegarde la figure dans un fichier temporaire."""

@@ -26,11 +26,6 @@ class Instrument :
              self.etat = etat
 
 
-class Rapport : 
-    def __init__(self):
-         pass
-    def includeResultat(self):
-         pass
 
 resourceManager = pyvisa.ResourceManager()
 list = resourceManager.list_resources()

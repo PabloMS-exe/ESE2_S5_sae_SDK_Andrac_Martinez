@@ -1,31 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from fpdf import FPDF
 import tempfile
 import os
 import csv
-
-class Gabarit:
-    def __init__(self, freq_min, freq_max, att_min, att_max):
-        self.freq_min = freq_min
-        self.freq_max = freq_max
-        self.att_min = att_min
-        self.att_max = att_max
-
-    def est_dans_gabarit(self, freq, valeur):
-        return (self.freq_min <= freq <= self.freq_max and
-                self.att_min <= valeur <= self.att_max)
-
-    def tracer(self, ax, label):
-        ax.axvline(self.freq_min, color='r', linestyle='--', alpha=0.5)
-        ax.axvline(self.freq_max, color='r', linestyle='--', alpha=0.5)
-        ax.axhline(self.att_min, color='g', linestyle='--', alpha=0.5)
-        ax.axhline(self.att_max, color='g', linestyle='--', alpha=0.5)
-        ax.fill_between(
-            [self.freq_min, self.freq_max],
-            self.att_min, self.att_max,
-            color='#FFFF00', alpha=0.4, label='Gabarit'
-        )
 
 class TracerCourbes:
     def __init__(self, fichier_csv=None, titre="Mesures Hyperfréquences"):
@@ -148,54 +125,8 @@ class TracerCourbes:
         plt.close(self.fig)  # Important pour libérer la mémoire
         return chemin
 
-class PDFExporter(FPDF):
-    def __init__(self):
-        super().__init__()
-        self.set_auto_page_break(auto=True, margin=15)
-        # Charge la police Unicode DejaVu (assure-toi que le fichier TTF est bien dans fonts/)
-        self.add_font('DejaVu', '', 'fonts/DejaVuSans.ttf', uni=True)
-        self.add_font('DejaVu', 'B', 'fonts/DejaVuSans-Bold.ttf', uni=True)
-        self.set_font('DejaVu', '', 12)
-    
-    def ajouter_page(self):
-        self.add_page()
-
-    def ajouter_texte(self, texte, taille=12):
-        self.set_font('DejaVu', '', taille)
-        self.multi_cell(0, 10, texte)
-        self.ln(5)
-
-    def ajouter_courbe(self, tracer, titre=None):
-        chemin_img = tracer.sauvegarder()
-        if titre:
-            self.set_font('DejaVu', 'B', 14)
-            self.cell(0, 10, titre, ln=True, align='C')
-            self.ln(5)
-        self.image(chemin_img, x=30, w=150)
-        os.remove(chemin_img)
-
-    def generer(self, chemin_pdf):
-        self.output(chemin_pdf)
-        print(f"PDF généré: {chemin_pdf}")
 
 
-# # 1. Créer une courbe avec gabarit
-# tracer = TracerCourbes(titre="Analyse Hyperfréquence - Gabarit")
-# gabarit1 = Gabarit(freq_min=0.0, freq_max=2.2, att_min=1.0, att_max=2.0)
-# gabarit2 = Gabarit(freq_min=2.2, freq_max=6.0, att_min=-0.8, att_max=0.5)
-# gabarit3 = Gabarit(freq_min=6.0, freq_max=8.0, att_min=1.2, att_max=2.2)
-# liste_gabarit = [gabarit1, gabarit2, gabarit3]
-# tracer.ajouter_gabarit(liste_gabarit)
 
-# # 2. Générer le PDF
-# pdf = PDFExporter()
-# pdf.ajouter_texte(
-#     "Rapport de Mesures Hyperfréquences\n"
-#     "----------------------------------\n"
-#     f"Gabarit appliqué:\n"
-#     f"- Plage de fréquences: {gabarit1.freq_min} à {gabarit1.freq_max} Hz\n"
-#     f"- Atténuation tolérée: {gabarit1.att_min} à {gabarit1.att_max} dB \n"
-# )
-# pdf.ajouter_courbe(tracer, "Courbe avec Gabarit Hyperfréquence")
-# pdf.generer("rapport_hyperfrequences.pdf")
+
 

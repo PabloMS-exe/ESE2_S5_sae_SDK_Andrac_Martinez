@@ -84,9 +84,9 @@ class ResultatARV(Resultat):
             mag_dB = 20 * math.log10((re**2 + im**2)**0.5)
             return mag_dB
 
-    except Exception as e:
-        print(f"Erreur lors de la récupération de la perte d'insertion : {e}")
-        return None
+        except Exception as e:
+            print(f"Erreur lors de la récupération de la perte d'insertion : {e}")
+            return None
 
     def get_frequence(self):
         """Récupère la fréquence centrale actuelle."""

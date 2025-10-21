@@ -98,7 +98,7 @@ class FCS21MaxMeasure(Mesure_ARV):
             f0_hz = self.marker_x_hz()
 
             if f0_hz is None:
-                print("⚠️ Lecture de f0 impossible (timeout)")
+                print("Lecture de f0 impossible (timeout)")
                 return {"name": self.name, "value": None, "unit": self.unit}
 
             return {"name": self.name, "value": f0_hz / 1e6, "unit": self.unit}
@@ -124,12 +124,12 @@ class DeltaBPMeasure(Mesure_ARV):
             raw = self.instrument.write("CALC:MARK1:BWID?")  # commande principale
             raw = self.instrument.read("CALC:MARK1:BWID?")  # commande principale
             if raw is None or raw.strip() == "":
-                print("⚠️ BWID non disponible sur cet instrument")
+                print("Bande passante non disponible sur cet instrument")
                 bw_hz = 0.0
             else:
                 bw_hz = float(raw.split(",")[0])
         except Exception as e:
-            print(f"⚠️ Erreur lors de la lecture de la bande passante : {e}")
+            print(f"Erreur lors de la lecture de la bande passante : {e}")
             bw_hz = 0.0
 
         return {"name": self.name, "value": bw_hz / 1e6, "unit": "MHz"}
@@ -150,12 +150,12 @@ class DeltaBRMeasure(Mesure_ARV):
         try:
             raw = self.instrument.query("CALC:MARK1:BWID?")  # commande principale
             if raw is None or raw.strip() == "":
-                print("⚠️ BWID non disponible sur cet instrument")
+                print("Bande passante non disponible sur cet instrument")
                 bw_hz = 0.0
             else:
                 bw_hz = float(raw.split(",")[0])
         except Exception as e:
-            print(f"⚠️ Erreur lors de la lecture de la bande passante : {e}")
+            print(f"Erreur lors de la lecture de la bande passante : {e}")
             bw_hz = 0.0
 
         return {"name": self.name, "value": bw_hz / 1e6, "unit": "MHz"}

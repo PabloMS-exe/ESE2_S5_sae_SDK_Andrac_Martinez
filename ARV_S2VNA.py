@@ -12,9 +12,8 @@ class ARV_S2VNA(Instrument):
         self.rm = pyvisa.ResourceManager()
         self.device = None
 
-    # -------------------------------------------------------------------------
-    # --- Gestion connexion VISA
-    # -------------------------------------------------------------------------
+    # Gestion connexion VISA
+
     def connect(self):
         try:
             resource_string = f"TCPIP0::{self.adresse}::{self.port}::SOCKET"

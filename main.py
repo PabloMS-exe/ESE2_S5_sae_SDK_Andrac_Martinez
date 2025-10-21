@@ -1,11 +1,16 @@
-from tracer_courbes import TracerCourbes, Gabarit, PDFExporter
+from tracer_courbes import TracerCourbes
+from PDF import Creation_PDF
+from gabarit import Gabarit
 from ARV_S2VNA import ARV_S2VNA
 from resultat_arv import ResultatARV
 from mesure import Mesure_ARV, S11Mesure, DeltaBPMeasure, DeltaBRMeasure
+from datetime import datetime
 
 # Programme Principal 
 S2VNA = ARV_S2VNA("127.0.0.1", 5025, "ARV")  # Création de l'instrument S2VNA
 S2VNA.connect()
+param_S = input("Choisissez une des paramètre S  (S11;S21;S12;S22) : ")
+S2VNA.set_parametre_S(param_S)
 mesure_S2VNA = Mesure_ARV(S2VNA)
 
 # 2. Demande à l'instrument de sauvegarder la trace dans un fichier CSV
@@ -25,15 +30,17 @@ liste_gabarit = [gabarit1, gabarit2, gabarit3]
 
 # # 4. Tracer la courbe
 chemin_local_fichier = f"E:/BUT_GE2I/SDK_SAE/mesures/{nom_fichier}.csv"
-tracer = TracerCourbes(fichier_csv=chemin_local_fichier, titre="Gain S21 mesuré")
+tracer = TracerCourbes(fichier_csv=chemin_local_fichier, titre=f"Gain {param_S} mesuré")
 tracer.ajouter_gabarit(liste_gabarit)
 tracer.tracer()  # Ne pas oublier de lancer le tracé
 
 # # 5. Créer le PDF
-pdf = PDFExporter()
+pdf = Creation_PDF()
 pdf.ajouter_page()
-nom_technicien = "Pablo"
-pdf.ajouter_texte(f"Le technicein est : {nom_technicien}")
+nom_technicien = input("Entrez le nom du technicien : ")
+pdf.set_xy(10, 10); pdf.cell(100, 10, f"Le technicien est : {nom_technicien}", ln=0)
+pdf.set_xy(150, 10); pdf.cell(50, 10, f"Date : {datetime.today().strftime('%d/%m/%Y')}", align='R')
+pdf.ln(10)  # ajoute un saut de ligne vertical de 10 mm
 pdf.multi_cell(0, 10, "Rapport de Mesures Hyperfréquences :\n------------------------", align='C')
 pdf.ajouter_texte(
     f"Gabarits appliqués :\n"
@@ -41,7 +48,7 @@ pdf.ajouter_texte(
     f"- [{gabarit2.freq_min/1e9:.1f} GHz – {gabarit2.freq_max/1e9:.1f} GHz] : {gabarit2.att_min} à {gabarit2.att_max} dB\n"
     f"- [{gabarit3.freq_min/1e9:.1f} GHz – {gabarit3.freq_max/1e9:.1f} GHz] : {gabarit3.att_min} à {gabarit3.att_max} dB\n"
 )
-pdf.ajouter_courbe(tracer, "Courbe S21 avec Gabarit")
+pdf.ajouter_courbe(tracer, f"Courbe {param_S} avec Gabarit")
 
 # # 6. Vérification de la conformité du test
 conforme = tracer.verifier_conformite(liste_gabarit) if hasattr(tracer, "verifier_conformite") else None
@@ -61,7 +68,6 @@ pdf.multi_cell(0, 10, "Résultats des Mesures :\n------------------------", alig
 
 
 #Pose bcp de problèmes : 
-
 
 resultat = ResultatARV(1000e6)  #1Ghz
 donnees = resultat.mesurer()

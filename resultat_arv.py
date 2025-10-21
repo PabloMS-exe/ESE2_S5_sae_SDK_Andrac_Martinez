@@ -9,7 +9,7 @@ class ResultatARV(Resultat):
         self.instrument = ARV_S2VNA("127.0.0.1", 5025, "ARV")
         self.instrument.connect()
         self.instrument.preset()
-        self.instrument.device.timeout = 30000  # 30 s pour commandes longues
+        self.instrument.device.timeout = 10000  # 30 s pour commandes longues
         self.freq_cible = freq_cible
 
         # Import local pour éviter boucle circulaire
@@ -44,8 +44,8 @@ class ResultatARV(Resultat):
 
     def get_bande_passante(self):
         """Récupère bande passante et fréquence centrale via SCPI."""
-        span_str = self._safe_query("SENS1:FREQ:SPAN?")
-        centre_str = self._safe_query("SENS1:FREQ:CENT?")
+        span_str = self._safe_query("SENS:FREQ:SPAN?")
+        centre_str = self._safe_query("SENS:FREQ:CENT?")
         try:
             span = float(span_str) if span_str else None
             centre = float(centre_str) if centre_str else None
@@ -54,13 +54,39 @@ class ResultatARV(Resultat):
         return span, centre
 
     def get_perte_insertion(self):
-        """Récupère la perte d'insertion à la fréquence cible via SCPI."""
-        self._envoyer_commande(f"MEAS:FREQ {self.freq_cible}")
-        pi_str = self._safe_query("MEAS:IMPed:LOSS?", delay=0.5)
+        """
+        Récupère la perte d'insertion (|S21| en dB) à la fréquence cible via SCPI.
+        Assure que S21 est le paramètre actif.
+        """
         try:
-            return float(pi_str) if pi_str else None
-        except ValueError:
-            return None
+            # Définir et sélectionner le paramètre S21
+            self._envoyer_commande("CALC:PAR:DEF S21, S21")
+            self._envoyer_commande("CALC:PAR:SEL S21")
+
+            # Définir la fréquence cible pour la mesure
+            self._envoyer_commande(f"SENS:FREQ:CENT {self.freq_cible}")
+
+            # Interroger la magnitude de S21 (en dB) à cette fréquence
+            magnitude_str = self._safe_query("CALC:DATA:FDAT?", delay=0.5)
+
+            if not magnitude_str:
+                return None
+
+            # La réponse est souvent une liste plate : [re0, im0, re1, im1, ...]
+            # On prend le premier point réel + imaginaire
+            valeurs = list(map(float, magnitude_str.strip().split(',')))
+            if len(valeurs) < 2:
+                return None
+
+            re, im = valeurs[0], valeurs[1]
+            # Calcul de la magnitude en dB : 20 * log10(|S21|)
+            import math
+            mag_dB = 20 * math.log10((re**2 + im**2)**0.5)
+            return mag_dB
+
+    except Exception as e:
+        print(f"Erreur lors de la récupération de la perte d'insertion : {e}")
+        return None
 
     def get_frequence(self):
         """Récupère la fréquence centrale actuelle."""

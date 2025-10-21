@@ -1,4 +1,5 @@
 from SAE_POO import Mesure
+from ARV_S2VNA import ARV_S2VNA
 import os
 import time
 
@@ -120,7 +121,8 @@ class DeltaBPMeasure(Mesure_ARV):
         self.instrument.device.write("CALC:MARK:BWID:TYPE BPAS")
         # Lecture de la bande passante
         try:
-            raw = self.instrument.query("CALC:MARK1:BWID?")  # commande principale
+            raw = self.instrument.write("CALC:MARK1:BWID?")  # commande principale
+            raw = self.instrument.read("CALC:MARK1:BWID?")  # commande principale
             if raw is None or raw.strip() == "":
                 print("⚠️ BWID non disponible sur cet instrument")
                 bw_hz = 0.0

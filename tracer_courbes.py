@@ -79,37 +79,23 @@ class TracerCourbes:
         self.ax.plot(x, y, label="Signal", color='blue', linewidth=1.5)
 
         if self.liste_gabarit:
-            # On prépare deux listes globales
+            # Lister uniquement les points dans au moins un gabarit
             points_dans = []
-            points_hors = []
-            # On fait pour chaque point : vérifier s'il est dans **au moins un** gabarit
             for xi, yi in zip(x, y):
-                dans = False
                 for g in self.liste_gabarit:
                     if g.freq_min <= xi <= g.freq_max and g.att_min <= yi <= g.att_max:
-                        dans = True
-                        break
-                if dans:
-                    points_dans.append((xi, yi))
-                else:
-                    points_hors.append((xi, yi))
+                        points_dans.append((xi, yi))
+                        break  # Un seul gabarit suffit
 
-            # Maintenant on scatter les deux catégories, avec labels une seule fois
-            if points_hors:
-                x_h, y_h = zip(*points_hors)
-                self.ax.scatter(x_h, y_h, color='red', label='Hors gabarit', s=20)
+            # Tracer uniquement les points dans les gabarits, en rouge
             if points_dans:
                 x_d, y_d = zip(*points_dans)
-                self.ax.scatter(x_d, y_d, color='black', label='Dans le gabarit', s=20)
+                self.ax.scatter(x_d, y_d, color='red', s=20)
 
-            # Optionnel : tracer les gabarits visuellement
-            # Ici on les trace tous (avec ou sans label selon ta préférence)
-            # (Supposons qu'on veuille une seule légende "Gabarit")
-            # On peut faire un tracé invisible pour légende du gabarit
-            # Exemple :
+            # Tracer les gabarits visuellement
             self.ax.fill_between([], [], color='yellow', alpha=0.2, label='Gabarit')
             for g in self.liste_gabarit:
-                g.tracer(self.ax, label = "Gabarit")
+                g.tracer(self.ax, label='Gabarit')
 
         # Légende unique
         handles, labels = self.ax.get_legend_handles_labels()
@@ -127,7 +113,7 @@ class TracerCourbes:
     def verifier_conformite(self, liste_gabarit=None):
         """
         Vérifie si la courbe mesurée respecte tous les gabarits.
-        Retourne True si conforme, False sinon.
+        Retourne True si conforme (aucun point dans le gabarit), False sinon.
         Si liste_gabarit n'est pas fourni, utilise self.liste_gabarit.
         """
         if self.donnees is None or len(self.donnees) == 0:
@@ -144,9 +130,12 @@ class TracerCourbes:
 
         for g in gabarits:
             for f, g_mes in zip(freqs, gains):
-                if g.freq_min <= f <= g.freq_max:
-                    if not (g.att_min <= g_mes <= g.att_max):
-                        return False
+                # Si point DANS le gabarit (freq + gain dans les limites)
+                if g.freq_min <= f <= g.freq_max and g.att_min <= g_mes <= g.att_max:
+                    # Point trouvé dans gabarit => non conforme
+                    return False
+
+        # Aucun point dans aucun gabarit => conforme
         return True
 
 

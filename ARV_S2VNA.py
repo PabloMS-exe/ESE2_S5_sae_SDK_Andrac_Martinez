@@ -111,8 +111,8 @@ class ARV_S2VNA(Instrument):
 
     def set_frequence(self, freq, span):
         """Définit la fréquence centrale et l’étendue de balayage."""
-        self.write(f"SENSE:FREQUENCY:CENTER {freq}")
-        self.write(f"SENSE:FREQUENCY:SPAN {span}")
+        self.write(f"SENS:FREQ:CENT {freq}")
+        self.write(f"SENS:FREQ:SPAN {span}")
 
     def set_parametre_S(self, param_S):
         """

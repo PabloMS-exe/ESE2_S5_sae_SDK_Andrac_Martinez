@@ -18,9 +18,9 @@ if fichier_sur_instrument is None:
     exit(1)
 
 # # 3. Créer les gabarits
-gabarit1 = Gabarit(freq_min=0.0, freq_max=2.2e9, att_min=-100.0, att_max=-60.0)
-gabarit2 = Gabarit(freq_min=2.2e9, freq_max=6.0e9, att_min=-6, att_max=1)
-gabarit3 = Gabarit(freq_min=6.0e9, freq_max=8.0e9, att_min=-100.0, att_max=-60.0)
+gabarit1 = Gabarit(freq_min=0.0, freq_max=2.8e9, att_min=-30, att_max=10.0)
+gabarit2 = Gabarit(freq_min=3.2e9, freq_max=5.5e9, att_min=-80, att_max=-5)
+gabarit3 = Gabarit(freq_min=5.90e9, freq_max=9.0e9, att_min=-30, att_max=10.0)
 liste_gabarit = [gabarit1, gabarit2, gabarit3]
 
 # # 4. Tracer la courbe
@@ -32,7 +32,8 @@ tracer.tracer()  # Ne pas oublier de lancer le tracé
 # # 5. Créer le PDF
 pdf = PDFExporter()
 pdf.ajouter_page()
-pdf.ajouter_texte
+nom_technicien = "Pablo"
+pdf.ajouter_texte(f"Le technicein est : {nom_technicien}")
 pdf.multi_cell(0, 10, "Rapport de Mesures Hyperfréquences :\n------------------------", align='C')
 pdf.ajouter_texte(
     f"Gabarits appliqués :\n"
@@ -47,9 +48,9 @@ conforme = tracer.verifier_conformite(liste_gabarit) if hasattr(tracer, "verifie
 
 if conforme is not None:
     if conforme:
-        pdf.ajouter_texte("\n Le dispositif est **CONFORME** aux spécifications du gabarit.\n")
+        pdf.ajouter_texte("\n Le dispositif est conforme aux spécifications du gabarit.\n")
     else:
-        pdf.ajouter_texte("\n Le dispositif est **NON CONFORME** aux spécifications du gabarit.\n")
+        pdf.ajouter_texte("\n Le dispositif est non conforme aux spécifications du gabarit.\n")
 else:
     pdf.ajouter_texte("\n Impossible de déterminer la conformité (méthode `verifier_conformite` manquante dans `TracerCourbes`).\n")
 
@@ -57,6 +58,9 @@ else:
 # # 7. Ajouter les résultats au PDF
 pdf.ajouter_page()
 pdf.multi_cell(0, 10, "Résultats des Mesures :\n------------------------", align='C')  #Crée un texte centré
+
+
+#Pose bcp de problèmes : 
 
 
 resultat = ResultatARV(1000e6)  #1Ghz
@@ -72,6 +76,6 @@ pdf.ajouter_texte( f"- La perte d'insertion est :{pi} dB\n")
 
 
 # # 8. Générer le PDF final
-pdf.generer("E:/BUT_GE2I/SDK_SAE/test_rapports/rapports_SAE.pdf")
+pdf.generer("E:/BUT_GE2I/SDK_SAE/test_rapports/rapports_SAE_2.pdf")  # endroit de sauvegarde
 
 

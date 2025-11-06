@@ -6,19 +6,23 @@ import csv
 
 class TracerCourbes:
     def __init__(self, fichier_csv=None, titre="Mesures Hyperfréquences"):
+        # Liste des gabarits à afficher
         self.liste_gabarit = []
         self.titre = titre
+
+        # Création de la figure et des axes pour le tracé
         self.fig, self.ax = plt.subplots(figsize=(8, 5))
-        # Charger les données depuis le fichier CSV si fourni
+
+        # Charge les données depuis le CSV si fourni
         self.donnees = self.charger_donnees_csv(fichier_csv) if fichier_csv else None
 
     def charger_donnees_csv(self, fichier_csv):
         """
-        Charge les données (fréquence, gain) depuis un fichier CSV.
-        Le fichier doit avoir deux colonnes numériques sans en-tête, ou avec 'Frequence', 'Gain'.
+        Lit un fichier CSV avec deux colonnes : fréquence et gain.
+        Ignore les lignes mal formées et vérifie si il y a un en-tête.
         """
         if not os.path.exists(fichier_csv):
-            print(f"❌ Fichier CSV introuvable : {fichier_csv}")
+            print(f"Fichier CSV introuvable : {fichier_csv}")
             return None
 
         try:
@@ -27,7 +31,7 @@ class TracerCourbes:
                 reader = csv.reader(f)
                 lignes = list(reader)
 
-                # Vérifie s’il y a un en-tête (texte dans la première ligne)
+                # Détecte si la première ligne est un texte (en-tête)
                 start_index = 1 if any(s.isalpha() for s in lignes[0][0]) else 0
 
                 for row in lignes[start_index:]:
@@ -36,45 +40,46 @@ class TracerCourbes:
                         gain = float(row[1].strip())
                         data.append((freq, gain))
                     except ValueError:
-                        continue  # Ignore les lignes mal formatées
+                        continue  # Ignore les lignes incorrectes
 
-            print(f"✅ {len(data)} points chargés depuis : {fichier_csv}")
+            print(f"{len(data)} points chargés depuis : {fichier_csv}")
             return np.array(data)
         except Exception as e:
             print(f"Erreur lecture fichier CSV : {e}")
             return None
 
     def ajouter_gabarit(self, liste_gabarit):
+        """Ajoute une liste de gabarits pour les tracer ensuite"""
         self.liste_gabarit = liste_gabarit 
 
     def tracer(self):
+        """Trace la courbe et les gabarits"""
         if self.donnees is None or len(self.donnees) == 0:
-            print("⚠️ Aucune donnée à tracer.")
+            print("Aucune donnée à tracer.")
             return
 
         x, y = self.donnees[:, 0], self.donnees[:, 1]
         self.ax.plot(x, y, label="Signal", color='blue', linewidth=1.5)
 
+        # Si des gabarits sont définis
         if self.liste_gabarit:
-            # Lister uniquement les points dans au moins un gabarit
             points_dans = []
             for xi, yi in zip(x, y):
                 for g in self.liste_gabarit:
                     if g.freq_min <= xi <= g.freq_max and g.att_min <= yi <= g.att_max:
                         points_dans.append((xi, yi))
-                        break  # Un seul gabarit suffit
+                        break  # Un point ne doit appartenir qu'à un seul gabarit
 
-            # Tracer uniquement les points dans les gabarits, en rouge
+            # Trace les points dans les gabarits en rouge
             if points_dans:
                 x_d, y_d = zip(*points_dans)
                 self.ax.scatter(x_d, y_d, color='red', s=20)
 
             # Tracer les gabarits visuellement
-            self.ax.fill_between([], [], color='yellow', alpha=0.2, label='Gabarit')
             for g in self.liste_gabarit:
                 g.tracer(self.ax, label='Gabarit')
 
-        # Légende unique
+        # Évite les doublons dans la légende
         handles, labels = self.ax.get_legend_handles_labels()
         unique = {}
         for h, l in zip(handles, labels):
@@ -87,19 +92,16 @@ class TracerCourbes:
         self.ax.set_ylabel("Amplitude (dB)")
         self.ax.grid(True, linestyle='--', alpha=0.6)
         plt.show()
+
     def verifier_conformite(self, liste_gabarit=None):
-        """
-        Vérifie si la courbe mesurée respecte tous les gabarits.
-        Retourne True si conforme (aucun point dans le gabarit), False sinon.
-        Si liste_gabarit n'est pas fourni, utilise self.liste_gabarit.
-        """
+        """Vérifie si la courbe respecte tous les gabarits. Retourne True si aucun point n'est dans les gabarits."""
         if self.donnees is None or len(self.donnees) == 0:
-            print("⚠️ Aucune donnée pour vérification.")
+            print("Aucune donnée pour vérifier la conformité.")
             return False
 
-        gabarits = liste_gabarit if liste_gabarit is not None else self.liste_gabarit
+        gabarits = liste_gabarit if liste_gabarit else self.liste_gabarit
         if not gabarits:
-            print("⚠️ Aucun gabarit défini pour la vérification.")
+            print("Aucun gabarit défini.")
             return False
 
         freqs = self.donnees[:, 0]
@@ -107,26 +109,18 @@ class TracerCourbes:
 
         for g in gabarits:
             for f, g_mes in zip(freqs, gains):
-                # Si point DANS le gabarit (freq + gain dans les limites)
                 if g.freq_min <= f <= g.freq_max and g.att_min <= g_mes <= g.att_max:
-                    # Point trouvé dans gabarit => non conforme
+                    # Si un point est dans le gabarit => non conforme
                     return False
 
-        # Aucun point dans aucun gabarit => conforme
+        # Aucun point dans les gabarits => conforme
         return True
 
-
     def sauvegarder(self, chemin=None):
-        """Sauvegarde la figure dans un fichier temporaire."""
+        """Sauvegarde la figure dans un fichier temporaire ou donné"""
         if chemin is None:
             chemin = tempfile.mktemp(suffix='.png')
         self.tracer()
         self.fig.savefig(chemin, bbox_inches='tight', dpi=100)
-        plt.close(self.fig)  # Important pour libérer la mémoire
+        plt.close(self.fig)  # Libère la mémoire
         return chemin
-
-
-
-
-
-

@@ -4,30 +4,31 @@ import os
 import time
 
 class Mesure_ARV(Mesure):
-    def __init__(self,instrument: ARV_S2VNA, name =None, unit =None):
+    # Sert à contrôler l'instrument et lire les mesures
+    def __init__(self, instrument: ARV_S2VNA, name=None, unit=None):
         super().__init__(instrument)
-        self.name =name
-        self.unit = unit
-        
+        self.name = name      # Nom de la mesure (ex: S11, S21…)
+        self.unit = unit      # Unité de mesure (ex: dB, MHz…)
+
     def marker_y(self):
-        """Lit la valeur du marqueur actif (en dB par exemple)."""
+        """Lit la valeur du marqueur """
         try:
-            # Activation explicite du marqueur si pas déjà fait
+            # Active le marqueur 1 sur le graphe
             self.instrument.device.write("CALC:MARK1 ON")
-            time.sleep(1)
-            
-            # S'assurer qu’un calcul est terminé
+            time.sleep(1)  # On attend un peu pour être sûr que c’est pris en compte
+
+            # Attend que l’appareil ait fini ses calculs
             self.instrument.device.write("*WAI")
 
-            # Interroger la valeur du marqueur
+            # Demande la valeur du marqueur (axe Y)
             raw = self.instrument.device.query("CALC:MARK1:Y?")
-            return float(raw.strip())
+            return float(raw.strip())  # On enlève les espaces et on convertit en nombre
         except Exception as e:
             print(f"Erreur lors de la lecture du marqueur : {e}")
             return None
 
     def marker_x_hz(self):
-        """Retourne la fréquence (X) du marqueur 1 en Hz."""
+        """Lit la fréquence du marqueur en Hertz."""
         try:
             raw = self.instrument.device.query("CALC:MARK1:X?")
             return float(raw)
@@ -35,50 +36,55 @@ class Mesure_ARV(Mesure):
             print(f"Erreur lecture marqueur X : {e}")
             return None
 
-    def setInstrument(self,freq_start, freq_span, cal, paramS):
-        self.freq_start = freq_start
-        self.freq_span = freq_span
-        self.cal = cal 
-        self.paramS = paramS
+    def setInstrument(self, freq_start, freq_span, cal, paramS):
+        """Configure l’instrument avant la mesure."""
+        self.freq_start = freq_start  # fréquence de départ
+        self.freq_span = freq_span    # largeur de bande
+        self.cal = cal                # type de calibration
+        self.paramS = paramS          # paramètre S choisi (S11, S21…)
+
+        # Réinitialise l’appareil et applique les réglages
         self.instrument.preset()
         self.instrument.set_frequence(self.freq_start, self.freq_span)
         self.instrument.set_calibrage(self.cal)
         self.instrument.set_parametre_S(self.paramS)
 
+    def get_trace_data(self, dossier="F:/BUT_GE2I/SDK_SAE", base_nom="", extension=".csv"):
 
-    def get_trace_data(self, dossier="F:/BUT_GE2I/SDK_SAE", base_nom = "", extension=".csv"):
-        """
-        Sauvegarde la trace de mesure avec un nom personnalisé et horodaté.
-        Exemple : E:/BUT_GE2I/SDK_SAE/mesure_S21_20251014_153045.csv
-        """
+        #Sauvegarde la courbe mesurée dans un fichier CSV
         try:
-            # Génération du nom de fichier avec date et heure
+            # Crée le nom complet du fichier
             nom_fichier = f"{base_nom}{extension}"
             chemin_complet = os.path.join(dossier, nom_fichier)
 
-            # Envoi de la commande à l'instrument
+            # Commande envoyée à l’appareil pour sauvegarder la courbe
             self.instrument.device.write(f"MMEM:STOR:FDAT '{chemin_complet}'")
             print(f"Fichier sauvegardé : {chemin_complet}")
             return chemin_complet
         except Exception as e:
             print(f"Erreur lors de la sauvegarde des mesures : {e}")
             return None
-        
 
 class S11Mesure(Mesure_ARV):
+    # Sert à mesurer le paramètre S11 (taux de réflexion)
     def __init__(self, instrument):
         super().__init__(instrument, name="S11", unit="dB")
 
     def do_mesures(self):
-        print(self.instrument.query("*IDN?"))
-        self.instrument.set_parametre_S("S11")
-        time.sleep(0.2) 
+        print(self.instrument.query("*IDN?"))  # Vérifie la connexion
+        self.instrument.set_parametre_S("S11")  # Sélectionne S11
+        time.sleep(0.2)
+
+        # Cherche le minimum (le point le plus bas de la courbe)
         self.instrument.write("CALC:MARK1:FUNC:TYPE MIN")
         self.instrument.write("CALC:MARK1:FUNC:EXEC")
+
+        # Lit la valeur du marqueur
         val_db = self.marker_y()
         return {"name": self.name, "value": val_db, "unit": self.unit}
 
 class FCS21MaxMeasure(Mesure_ARV):
+    # Sert à trouver la fréquence où S21 est au maximum
     def __init__(self, instrument):
         super().__init__(instrument, name="FC:S21max(MHZ)", unit="MHz")
 
@@ -86,45 +92,52 @@ class FCS21MaxMeasure(Mesure_ARV):
         print(self.instrument.query("*IDN?"))
         try:
             self.instrument.set_parametre_S("S21")
-            time.sleep(0.2)     
+            time.sleep(0.2)
             self.instrument.device.write("CALC:PAR1:DEF S21")
-            print("Paramètre S21 défini via CALC:PAR1:DEF S21")
-            
+            print("Paramètre S21 défini.")
+
+            # Active le marqueur et cherche le maximum
             self.instrument.device.write("CALC:MARK1 ON")
             self.instrument.device.write("CALC:MARK1:FUNC:TYPE MAX")
+
+            # Lance la mesure et attend la fin
             self.instrument.device.write("INIT:IMM")
             self.instrument.device.query("*OPC?")
 
+            # Récupère la fréquence du marqueur
             f0_hz = self.marker_x_hz()
 
             if f0_hz is None:
-                print("Lecture de f0 impossible (timeout)")
+                print("Lecture de la fréquence impossible.")
                 return {"name": self.name, "value": None, "unit": self.unit}
 
-            return {"name": self.name, "value": f0_hz / 1e6, "unit": self.unit}
+            return {"name": self.name, "value": f0_hz / 1e6, "unit": self.unit}  # converti en MHz
 
         except Exception as e:
             print(f"Erreur lors de la mesure FCS21Max: {e}")
             return {"name": self.name, "value": None, "unit": self.unit}
 
 class DeltaBPMeasure(Mesure_ARV):
+    # Sert à mesurer la bande passante à -3 dB
     def __init__(self, instrument):
         super().__init__(instrument, name="deltaBP(MHZ)", unit="MHz")
 
     def do_mesures(self):
         print(self.instrument.query("*IDN?"))
         self.instrument.set_parametre_S("S21")
-        time.sleep(0.2) 
+        time.sleep(0.2)
+
+        # Réglage du mode "bande passante"
         self.instrument.device.write("CALC:MARK:BWID ON")
         self.instrument.device.write("CALC:MARK:BWID:REF MAX")
-        self.instrument.device.write("CALC:MARK:BWID:THR -3")
+        self.instrument.device.write("CALC:MARK:BWID:THR -3")  # seuil -3 dB
         self.instrument.device.write("CALC:MARK:BWID:TYPE BPAS")
+
         # Lecture de la bande passante
         try:
-            raw = self.instrument.write("CALC:MARK1:BWID?")  # commande principale
-            raw = self.instrument.read("CALC:MARK1:BWID?")  # commande principale
+            raw = self.instrument.query("CALC:MARK1:BWID?")
             if raw is None or raw.strip() == "":
-                print("Bande passante non disponible sur cet instrument")
+                print("Bande passante non disponible.")
                 bw_hz = 0.0
             else:
                 bw_hz = float(raw.split(",")[0])
@@ -135,27 +148,31 @@ class DeltaBPMeasure(Mesure_ARV):
         return {"name": self.name, "value": bw_hz / 1e6, "unit": "MHz"}
 
 class DeltaBRMeasure(Mesure_ARV):
+    # Sert à mesurer la bande à -20 dB (réjection)
     def __init__(self, instrument):
         super().__init__(instrument, name="deltaBR(MHZ)", unit="MHz")
 
     def do_mesures(self):
         print(self.instrument.query("*IDN?"))
         self.instrument.set_parametre_S("S21")
-        time.sleep(0.2) 
+        time.sleep(0.2)
+
+        # Réglage du mode "bande réjection"
         self.instrument.device.write("CALC:MARK:BWID ON")
         self.instrument.device.write("CALC:MARK:BWID:REF MAX")
-        self.instrument.device.write("CALC:MARK:BWID:THR -20")
+        self.instrument.device.write("CALC:MARK:BWID:THR -20")  # seuil -20 dB
         self.instrument.device.write("CALC:MARK:BWID:TYPE BPAS")
-        # Lecture de la bande passante
+
+        # Lecture de la bande à -20 dB
         try:
-            raw = self.instrument.query("CALC:MARK1:BWID?")  # commande principale
+            raw = self.instrument.query("CALC:MARK1:BWID?")
             if raw is None or raw.strip() == "":
-                print("Bande passante non disponible sur cet instrument")
+                print("Bande passante non disponible.")
                 bw_hz = 0.0
             else:
                 bw_hz = float(raw.split(",")[0])
         except Exception as e:
-            print(f"Erreur lors de la lecture de la bande passante : {e}")
+            print(f"Erreur lors de la lecture de la bande à -20 dB : {e}")
             bw_hz = 0.0
 
         return {"name": self.name, "value": bw_hz / 1e6, "unit": "MHz"}

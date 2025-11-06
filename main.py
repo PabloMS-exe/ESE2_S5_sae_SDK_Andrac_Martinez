@@ -77,7 +77,7 @@ pdf.ajouter_page()
 pdf.multi_cell(0, 10, "Résultats des Mesures :\n------------------------", align='C')
 
 # Partie problème : les valeurs renvoient None car la simulation ne répond pas aux requêtes SCPI
-resultat = ResultatARV(1000e6)  # 1 GHz
+resultat = ResultatARV(1000e6)  # Fréquence : 1 GHz
 donnees = resultat.mesurer()
 bp = donnees["bande_passante"]["value"]
 cf = donnees["centre_freq"]["value"]
